@@ -13,22 +13,29 @@ final class GazeModelTests: XCTestCase {
     }
 
     /// Simulated user looking at relative point `p` on a screen centred at `yawCenter` radians:
-    /// the head does ~70 % of the turn, the eyes the rest. `seat` shifts the face in the camera frame.
+    /// the head does ~70 % of the turn, the eyes the rest. With `eyesOnly` the head stays aimed at the
+    /// screen centre and the eyes do all of it. `seat` shifts the face in the camera frame.
     private func features(yawCenter: Double, pitchCenter: Double = 0, p: CGPoint, noise: Double,
-                          seat: (x: Double, size: Double) = (0, 0)) -> GazeFeatures {
+                          seat: (x: Double, size: Double) = (0, 0), eyesOnly: Bool = false) -> GazeFeatures {
         func n(_ scale: Double = 1) -> Double { Double.random(in: -noise...noise) * scale }
         let gazeYaw = yawCenter + (Double(p.x) - 0.5) * 0.45
         let gazePitch = pitchCenter - (Double(p.y) - 0.5) * 0.25
-        let yaw = gazeYaw * 0.7 + n()
-        let pitch = gazePitch * 0.7 + n()
+        let headYaw = eyesOnly ? yawCenter : gazeYaw * 0.7
+        let headPitch = eyesOnly ? pitchCenter : gazePitch * 0.7
+        let yaw = headYaw + n()
+        let pitch = headPitch + n()
         return GazeFeatures(
             yaw: yaw, pitch: pitch,
             noseX: yaw * 0.5 + n(0.4), noseY: 0.9 - pitch * 0.4 + n(0.4),
-            eyeX: gazeYaw * 0.3 * 0.12 + n(0.15), eyeY: gazePitch * 0.3 * 0.12 + n(0.15),
+            eyeX: (gazeYaw - headYaw) * 0.12 + n(0.15), eyeY: (gazePitch - headPitch) * 0.12 + n(0.15),
+            eyeOpen: 0.2 + (gazePitch - headPitch) * 0.1 + n(0.15),
             faceX: 0.5 + yaw * 0.05 + seat.x + n(0.1), faceY: 0.45 + n(0.1), faceSize: 0.1 + seat.size + n(0.02))
     }
 
     private let grid: [CGPoint] = [0.08, 0.5, 0.92].flatMap { x in [0.08, 0.5, 0.92].map { CGPoint(x: x, y: $0) } }
+
+    private let eyesOnlyGrid: [CGPoint] = [CGPoint(x: 0.5, y: 0.08), CGPoint(x: 0.5, y: 0.92),
+                                           CGPoint(x: 0.08, y: 0.5), CGPoint(x: 0.92, y: 0.5)]
 
     private let frames: [String: CGRect] = [
         "left": CGRect(x: -1920, y: 0, width: 1920, height: 1080),
@@ -41,6 +48,11 @@ final class GazeModelTests: XCTestCase {
             let samples = grid.flatMap { p in
                 (0..<12).map { _ in
                     CalibrationSample(features: features(yawCenter: center, p: p, noise: 0.01), displayUUID: uuid, point: p, fromClick: false)
+                }
+            } + eyesOnlyGrid.flatMap { p in
+                (0..<12).map { _ in
+                    CalibrationSample(features: features(yawCenter: center, p: p, noise: 0.01, eyesOnly: true),
+                                      displayUUID: uuid, point: p, fromClick: false)
                 }
             }
             model.replaceCalibration(for: uuid, with: samples, frames: frames)
@@ -81,6 +93,17 @@ final class GazeModelTests: XCTestCase {
         let reported = model.errors["right"]!
         XCTAssertGreaterThan(reported, 0)
         XCTAssertLessThan(reported, 0.2)
+    }
+
+    /// Head still, only the eyes glance to the bottom or top of the screen.
+    func testFollowsEyesWithoutHeadMovement() {
+        let model = calibrated()
+        for (y, expected) in [(0.9, true), (0.1, false)] {
+            let p = CGPoint(x: 0.5, y: y)
+            let predicted = model.predictPoint(features(yawCenter: 0.4, p: p, noise: 0.005, eyesOnly: true), on: "right")!
+            XCTAssertEqual(predicted.y > 0.5, expected)
+            XCTAssertLessThan(abs(predicted.y - p.y), 0.15)
+        }
     }
 
     func testLookingDownIsAway() {

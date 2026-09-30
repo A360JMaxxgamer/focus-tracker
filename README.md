@@ -51,18 +51,18 @@ Then allow Camera + Accessibility and recalibrate there (calibration is per Mac/
 
 | Step | File |
 |---|---|
-| Camera at 720p, max. 15 fps, frames kept in memory only; Vision yaw/pitch + nose relative to eye center (roll-corrected) + pupil offset + seating position | `HeadTracker.swift` |
+| Camera at 720p, max. 15 fps, frames kept in memory only; Vision yaw/pitch + nose relative to eye center (roll-corrected) + iris position (darkest pixels inside the eye outline, relative to the eye corners) + lid opening + seating position | `HeadTracker.swift` |
 | Shared model across all screens in the macOS arrangement (with quadratic head-pose terms) decides the screen or "looking away"; per-screen model yields the point on the screen; error via leave-one-point-out | `GazeModel.swift` |
 | Median + EMA smoothing, dwell (300 ms), edge margin (5 %), lock while typing/using the mouse, window choice by probability share, focus retry | `FocusEngine.swift` |
 | Focus via Accessibility (raise + frontmost, no synthetic click), move pointer along, remember last window per screen | `WindowFocus.swift` |
-| 3×3 grid + extra points on shared edges | `Calibration.swift` |
+| 3×3 grid + extra points on shared edges, then an eyes-only pass (head still) | `Calibration.swift` |
 | Learning from clicks (max. 60/screen), warning when hit rate drops | `FocusEngine.handleClick` |
 | ⇧⌘G pause, stop on sleep/lock | `HotKey.swift`, `AppDelegate.swift` |
 
 ### Accuracy
 
 - After calibration the app shows the estimated accuracy per screen (±% of screen width). At ±25 % or worse: check lighting/camera, recalibrate.
-- During calibration, actually turn your head toward the dot and sit normally.
+- During calibration, first turn your head toward the dot as usual; in the second pass keep your head still and move only your eyes.
 - Window choice: the gaze estimate is laid over the visible windows as a probability distribution (separate horizontal/vertical accuracy). A window wins at 60 % with a clear lead; otherwise the last used one stays focused.
 - **Monitor…** → "Waiting for" shows why it isn't switching right now (typing, mouse in use, settling, looking away).
 - **Record Diagnostics** writes features + decisions (no images) to `~/Library/Application Support/FocusTracker/diagnostics/` — for tuning.

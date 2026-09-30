@@ -159,7 +159,7 @@ struct DebugView: View {
                 if let f = engine.features {
                     row("Head", String(format: "yaw %+.1f° · pitch %+.1f°", f.yaw * 180 / .pi, f.pitch * 180 / .pi))
                     row("Nose", String(format: "x %+.3f · y %+.3f", f.noseX, f.noseY))
-                    row("Eyes", String(format: "x %+.3f · y %+.3f", f.eyeX, f.eyeY))
+                    row("Eyes", String(format: "x %+.3f · y %+.3f · open %.3f", f.eyeX, f.eyeY, f.eyeOpen))
                     row("Seat", String(format: "x %.2f · y %.2f · size %.3f", f.faceX, f.faceY, f.faceSize))
                 }
                 row("Facing", engine.facing?.name ?? "—")

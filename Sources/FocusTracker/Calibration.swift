@@ -40,30 +40,40 @@ final class CalibrationController {
                 view.moveDot(to: CGPoint(x: 0.5, y: 0.5), animated: false)
                 await Self.sleep(2.2)
 
-                for point in Self.points(for: display, among: all) {
+                let eyesOnly = "Screen \(index + 1) of \(displays.count): now keep your head still, facing the middle of the screen, and follow the dot with your eyes only."
+                let phases = [(intro, Self.points(for: display, among: all)), (eyesOnly, Self.eyesOnlyPoints)]
+                for (phaseIndex, (message, points)) in phases.enumerated() {
                     if Task.isCancelled { break }
-                    view.moveDot(to: point, animated: true)
-                    // Give head and eyes time to arrive before sampling.
-                    await Self.sleep(0.9)
-
-                    self.collected = []
-                    self.isCollecting = true
-                    view.setCollecting(true)
-                    await Self.sleep(1.2)
-                    var waited = 0.0
-                    while self.collected.count < 10, waited < 3, !Task.isCancelled {
-                        view.message = "Can't see your face — look at the dot, facing the camera."
-                        await Self.sleep(0.25)
-                        waited += 0.25
+                    if phaseIndex > 0 {
+                        view.message = message
+                        view.moveDot(to: CGPoint(x: 0.5, y: 0.5), animated: true)
+                        await Self.sleep(3)
                     }
-                    view.message = intro
-                    self.isCollecting = false
-                    view.setCollecting(false)
+                    for point in points {
+                        if Task.isCancelled { break }
+                        view.moveDot(to: point, animated: true)
+                        // Give head and eyes time to arrive before sampling.
+                        await Self.sleep(0.9)
 
-                    // The first frames can still be on the way to the dot.
-                    let settled = self.collected.dropFirst(2)
-                    result[display.uuid, default: []] += settled.map {
-                        CalibrationSample(features: $0, displayUUID: display.uuid, point: point, fromClick: false)
+                        self.collected = []
+                        self.isCollecting = true
+                        view.setCollecting(true)
+                        await Self.sleep(1.2)
+                        var waited = 0.0
+                        while self.collected.count < 10, waited < 3, !Task.isCancelled {
+                            view.message = "Can't see your face — look at the dot, facing the camera."
+                            await Self.sleep(0.25)
+                            waited += 0.25
+                        }
+                        view.message = message
+                        self.isCollecting = false
+                        view.setCollecting(false)
+
+                        // The first frames can still be on the way to the dot.
+                        let settled = self.collected.dropFirst(2)
+                        result[display.uuid, default: []] += settled.map {
+                            CalibrationSample(features: $0, displayUUID: display.uuid, point: point, fromClick: false)
+                        }
                     }
                 }
                 window.orderOut(nil)
@@ -79,6 +89,13 @@ final class CalibrationController {
     private static func sleep(_ seconds: Double) async {
         try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
     }
+
+    /// Revisited with the head held still, so the model learns what the eyes alone contribute —
+    /// otherwise eye movement always comes paired with head movement and a glance without it goes unnoticed.
+    private static let eyesOnlyPoints: [CGPoint] = [
+        CGPoint(x: 0.5, y: 0.08), CGPoint(x: 0.5, y: 0.92), CGPoint(x: 0.08, y: 0.5), CGPoint(x: 0.92, y: 0.5),
+        CGPoint(x: 0.5, y: 0.5),
+    ]
 
     /// 3×3 grid, plus extra spots along edges this screen shares with another one.
     private static func points(for display: DisplayInfo, among displays: [DisplayInfo]) -> [CGPoint] {

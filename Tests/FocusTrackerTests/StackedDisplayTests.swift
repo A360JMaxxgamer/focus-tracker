@@ -35,7 +35,7 @@ final class StackedDisplayTests: XCTestCase {
         return GazeFeatures(
             yaw: headYaw, pitch: headPitch,
             noseX: headYaw * 0.45 + n(0.5), noseY: -0.9 - headPitch * 0.35 + n(1),
-            eyeX: (yaw - headYaw) * 0.1 + n(0.2), eyeY: (pitch - headPitch) * 0.05 + n(0.4),
+            eyeX: (yaw - headYaw) * 0.1 + n(0.2), eyeY: (pitch - headPitch) * 0.05 + n(0.4), eyeOpen: 0.2 + (pitch - headPitch) * 0.05 + n(0.4),
             faceX: 0.5 + headYaw * 0.04 + n(0.1), faceY: 0.5 + n(0.1), faceSize: 0.063 + n(0.02))
     }
 

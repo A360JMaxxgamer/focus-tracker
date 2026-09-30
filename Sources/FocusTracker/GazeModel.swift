@@ -58,14 +58,14 @@ final class GazeModel {
     private var fileURL: URL
 
     private let maxClickSamplesPerDisplay = 80
-    private static let fileVersion = 2
+    private static let fileVersion = 3
 
     /// Size of a meaningful change per feature (see `GazeFeatures.vector`). Fixed rather than learned, so a
     /// feature that barely varied during calibration can't blow up when you shift in your seat.
-    private static let scales: [Double] = [0.1, 0.1, 0.05, 0.05, 0.02, 0.02, 0.05, 0.05, 0.01]
+    private static let scales: [Double] = [0.1, 0.1, 0.05, 0.05, 0.02, 0.02, 0.02, 0.05, 0.05, 0.01]
     /// Ridge penalty per feature. Seat position (last three) is only trusted once clicks from
     /// different positions back it up.
-    private static let penalties: [Double] = [1, 1, 1, 1, 3, 3, 100, 100, 100]
+    private static let penalties: [Double] = [1, 1, 1, 1, 1, 1, 1, 100, 100, 100]
     private static let minSamples = 12
 
     private struct File: Codable {
