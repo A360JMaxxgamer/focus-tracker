@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>FocusTracker</string>
+	<key>CFBundleExecutable</key>
+	<string>FocusTracker</string>
+	<key>CFBundleIdentifier</key>
+	<string>local.focustracker</string>
+	<key>CFBundleName</key>
+	<string>FocusTracker</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.5.0</string>
+	<key>CFBundleVersion</key>
+	<string>6</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>FocusTracker uses the camera to estimate which screen you are facing. Frames are analysed in memory and never saved or sent anywhere.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+</dict>
+</plist>
